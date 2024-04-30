@@ -1,0 +1,36 @@
+{
+  "name": "nodejs-starter-template",
+  "version": "1.0.0",
+  "description": "You can use this template when you're starting a new project. It contains general concepts, you can customize it according to your needs.",
+  "main": "app.js",
+  "dependencies": {
+    "@octokit/core": "^6.1.1",
+    "@octokit/plugin-rest-endpoint-methods": "^12.2.1",
+    "@octokit/plugin-throttling": "^9.1.0",
+    "@octokit/rest": "^20.1.0",
+    "dotenv": "^16.4.1",
+    "export-to-csv": "^0.2.2",
+    "octokit": "^2.1.0"
+  },
+  "scripts": {
+    "velocity:print": "node run.js",
+    "velocity:export": "EXPORT_CSV=true npm run velocity:print"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bahricanyesil/nodejs-starter-template.git"
+  },
+  "keywords": [
+    "node.js",
+    "boilerplate",
+    "starter",
+    "template"
+  ],
+  "author": "Bahrican Yesil",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bahricanyesil/nodejs-starter-template/issues"
+  },
+  "homepage": "https://github.com/bahricanyesil/nodejs-starter-template#readme",
+  "type": "module"
+}
