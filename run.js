@@ -54,8 +54,10 @@ const octokit = new MyOctokit({
         return true;
       }
     },
+    //fallbackSecondaryRateRetryAfter: 30,
+    //retryAfterBaseValue: 30,
   }
-})
+});
 
 const calCycleTimeToString = (merged_at, created_at) => Number((new Date(merged_at) - new Date(created_at)) / (1000 * 60 * 60)).toFixed(2) 
 
@@ -107,7 +109,7 @@ async function calVelocityByRepo (repo) {
     per_page: 100
   }).then((d) => {
     const filteredPullRequests = d.filter(isRelevantPull);
-
+    console.log(repo, filteredPullRequests.length);
     filteredPullRequests.forEach(({ user, number, merged_at, created_at }) => {
       const cycleTime = calCycleTimeToString(merged_at, created_at)
       allMergedPrsByRepo[repo].push({ author: user.login, pullId: number, cycleTime: `${cycleTime} hrs` })

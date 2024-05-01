@@ -73,7 +73,7 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
+#.env
 .env.development.local
 .env.test.local
 .env.production.local
@@ -156,6 +156,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-/distribution/
-/.idea/
-/.vscode/
+
+.idea/
+.vscode/
