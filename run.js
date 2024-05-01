@@ -1,5 +1,3 @@
-//import { Octokit } from 'octokit'
-//import { Octokit } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
 import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import { throttling } from "@octokit/plugin-throttling";
@@ -20,7 +18,6 @@ const allowedYears = [2022, 2023, 2024]
 
 const month = parseInt(process.argv[2].split('month=')[1])
 const year = parseInt(process.argv[3].split('year=')[1])
-//const team = process.argv[4].split('team=')[1]
 
 const { developers, repositories } = config
 
@@ -48,10 +45,10 @@ const octokit = new MyOctokit({
       }
     },
     onSecondaryRateLimit: (retryAfter, options, octokit) => {
-      // does not retry, only logs a warning
       octokit.log.warn(
           `SecondaryRateLimit detected for request ${options.method} ${options.url}`,
       );
+      //retry up to twice
       if (options.request.retryCount <= 2) {
         console.log(`Retrying after ${retryAfter} seconds!`);
         return true;
@@ -72,7 +69,7 @@ async function calReviewsByPullRequest (pullId, repo, author) {
     pull_number: pullId,
     per_page: 100
   }).then((d) => {
-    //console.log(repo, d.length);
+
     for (const {user} of d) {
       if (!developers.includes(user?.login) || reviewsAlreadyCounted.includes(user?.login)) {
         continue
@@ -110,7 +107,7 @@ async function calVelocityByRepo (repo) {
     per_page: 100
   }).then((d) => {
     const filteredPullRequests = d.filter(isRelevantPull);
-    //console.log(repo, filteredPullRequests.length);
+
     filteredPullRequests.forEach(({ user, number, merged_at, created_at }) => {
       const cycleTime = calCycleTimeToString(merged_at, created_at)
       allMergedPrsByRepo[repo].push({ author: user.login, pullId: number, cycleTime: `${cycleTime} hrs` })
@@ -154,32 +151,22 @@ setTimeout(async () => {
   if (process.env.EXPORT_CSV === 'true') {
     let thisRun = {};
 
-    //let data = `Name,Year,Month,PR #,Review #,Average Cycle Time (hours)\r\n`;
-
     for (const dev of developers) {
       thisRun[dev] = {totalPrs: pullRequestsByDevs[dev]?.totalPrs || 0, totalReviews: reviewsByDevs[dev] || 0, avgCycleTime: pullRequestsByDevs[dev]?.avgCycleTime};
-
-      // const row = [dev, year, month+1, pullRequestsByDevs[dev]?.totalPrs || 0, reviewsByDevs[dev] || 0, pullRequestsByDevs[dev]?.avgCycleTime].join(',') || 0;
-      // data += row + "\r\n";
     }
 
     if(!githubData[year]) { githubData[year] = {}; }
     if(!githubData[year][month]) { githubData[year][month] = {}; }
-    //if(!githubData[year][month][team]) { githubData[year][month][team] = {}; }
-
     githubData[year][month] = thisRun;
-
 
     let data1 = `Name,Year,Month,PR #,Review #,Average Cycle Time (hours)\r\n`;
 
     Object.entries(githubData).forEach(([y,months]) => {
       Object.entries(months).forEach(([m,devs]) => {
-        //Object.entries(teams).forEach(([t,devs]) => {
-          Object.entries(devs).forEach(([d,devValues]) => {
-            const row = [d, y, parseInt(m) + 1, devValues.totalPrs, devValues.totalReviews, devValues.avgCycleTime].join(',') || 0;
-            data1 += row + "\r\n";
-          })
-        //})
+        Object.entries(devs).forEach(([d,devValues]) => {
+          const row = [d, y, parseInt(m) + 1, devValues.totalPrs, devValues.totalReviews, devValues.avgCycleTime].join(',') || 0;
+          data1 += row + "\r\n";
+        })
       })
     })
 
@@ -190,13 +177,7 @@ setTimeout(async () => {
 
     fs.writeFile(`github-data-joint.csv`, data1, "utf-8", (err) => {
       if (err) console.log(err);
-      else console.log("Data1 saved");
+      else console.log("Data saved");
     });
-  
-    // fs.writeFile(`${team}-${year}-${month + 1}.csv`, data, "utf-8", (err) => {
-    //   if (err) console.log(err);
-    //   else console.log("Data saved");
-    // });
-  
   }
 }, simulateTime)
