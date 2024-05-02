@@ -61,12 +61,12 @@ const octokit = new MyOctokit({
 
 const calCycleTimeToString = (merged_at, created_at) => Number((new Date(merged_at) - new Date(created_at)) / (1000 * 60 * 60)).toFixed(2) 
 
-async function calReviewsByPullRequest (pullId, repo, author) {
+async function calReviewsByPullRequest (pullId, repo, author, owner) {
   // count review only once for every unique reviewer and ignore author's self review/comment
   const reviewsAlreadyCounted = [author]
-
+  //console.log(pullId, repo, author, owner);
   const { data } = await octokit.paginate('GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews', {
-    owner: 'vividseats',
+    owner: owner,
     repo: repo,
     pull_number: pullId,
     per_page: 100
@@ -97,22 +97,29 @@ function isRelevantPull(pull) {
 
 function exitBeforeDate(pull) {
   const merged_at = new Date(pull.merged_at);
-  if ((merged_at.getFullYear() <= year && merged_at.getMonth() < month)) { return true; }
+  if (merged_at.getFullYear() < year) { return true; }
+  if ((merged_at.getFullYear() <= year && merged_at.getMonth() < month-1)) { return true; }
 }
 
-async function calVelocityByRepo (repo) {
-  allMergedPrsByRepo[repo] = []
+async function calVelocityByRepo (repo, owner) {
+  allMergedPrsByRepo[owner+":"+repo] = []
   const { data } = await octokit.paginate('GET /repos/{owner}/{repo}/pulls', {
-    owner: "vividseats",
+    owner: owner,
     repo: repo,
     state: "closed",
     per_page: 100
+  }, (response, done) => {
+    //console.log(response.data);
+    if (response.data.find((pull) => exitBeforeDate(pull))) {
+      done();
+    }
+    return response.data;
   }).then((d) => {
     const filteredPullRequests = d.filter(isRelevantPull);
-    console.log(repo, filteredPullRequests.length);
+    //console.log(owner, repo, filteredPullRequests.length);
     filteredPullRequests.forEach(({ user, number, merged_at, created_at }) => {
       const cycleTime = calCycleTimeToString(merged_at, created_at)
-      allMergedPrsByRepo[repo].push({ author: user.login, pullId: number, cycleTime: `${cycleTime} hrs` })
+      allMergedPrsByRepo[owner+":"+repo].push({ author: user.login, pullId: number, cycleTime: `${cycleTime} hrs` })
       if (pullRequestsByDevs[user.login]) {
         const newTotalPr = pullRequestsByDevs[user.login].totalPrs + 1
         // calculate avg cycle time
@@ -131,9 +138,13 @@ async function calVelocityByRepo (repo) {
 
 setTimeout(async () => {
   try {
-    await Promise.allSettled(repositories['vividseats'].map(async (repo) => await calVelocityByRepo(repo)))
-    await Promise.allSettled(Object.keys(allMergedPrsByRepo).map(async repo => {
-      await Promise.allSettled(allMergedPrsByRepo[repo].map(async ({ author, pullId }) => await calReviewsByPullRequest(pullId, repo, author)))
+    await Promise.allSettled(Object.keys(repositories).map(async owner => {
+      await Promise.allSettled(repositories[owner].map(async (repo) => await calVelocityByRepo(repo, owner)))
+    }))
+
+    await Promise.allSettled(Object.keys(allMergedPrsByRepo).map(async ownerrepo => {
+      const [owner, repo] = ownerrepo.split(":");
+      await Promise.allSettled(allMergedPrsByRepo[owner+":"+repo].map(async ({ author, pullId }) => await calReviewsByPullRequest(pullId, repo, author, owner)))
     }))
   } catch (err) {
     throw err
@@ -142,10 +153,10 @@ setTimeout(async () => {
   // execution time simulated with setTimeout function
   const end = new Date() - start
   const hrend = process.hrtime(hrstart)
-  
+
+  console.log('allMergedPrsByRepo', allMergedPrsByRepo)
   console.log('PRs', pullRequestsByDevs)
   console.log('Reviews', reviewsByDevs)
-  console.log('allMergedPrsByRepo', allMergedPrsByRepo)
 
   console.info('Execution time: %dms', end)
   console.info('Execution time (hr): %ds %dms', hrend[0], hrend[1] / 1000000)

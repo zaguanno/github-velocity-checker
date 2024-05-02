@@ -96,5 +96,10 @@
       "ticket-city-batch",
       "fraud-multi-module"
     ],
-    "fanxchange": []}
+    "fanxchange": [
+      "canon",
+      "messaging-service",
+      "fanx-apis",
+      "marketplace-whitelabel"
+    ]}
 }
