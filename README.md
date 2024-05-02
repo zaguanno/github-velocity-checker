@@ -1,6 +1,12 @@
 ## Setup
-1. Ensure `GIT_HUB_TOKEN` in the `.env` file is up-to-date
-2. `config.json` stores all relevant repos and developers
+1. Copy `.env.example` to `.env`
+2. To generate `GIT_HUB_TOKEN` in the `.env` file:
+   1. Go to your Github Account Settings > Developer Settings (at the bottom of the menu) > Personal access tokens > 
+   Tokens (classic)
+   2. Generate a new (classic) token
+   3. Add only the following permissions to the token: `read:audit_log, read:gpg_key, read:org, read:project, 
+   read:ssh_signing_key, read:user, repo, user:email`
+3. `config.json` stores all relevant repos and developers
    1. Currently the script is hardcoded to the `vividseats` org, but the config json is setup to allow repos from 
    others (ie- fanexchange)
 
