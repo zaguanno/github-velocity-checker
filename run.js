@@ -96,9 +96,16 @@ function isRelevantPull(pull) {
 }
 
 function exitBeforeDate(pull) {
+  //console.log(year,month,pull.merged_at);
+  if (!pull.merged_at) { return false; }
   const merged_at = new Date(pull.merged_at);
   if (merged_at.getFullYear() < year) { return true; }
   if ((merged_at.getFullYear() <= year && merged_at.getMonth() < month-1)) { return true; }
+}
+
+function ifPullMatchesDate(pull) {
+  const merged_at = new Date(pull.merged_at);
+  if (merged_at.getFullYear() == year && merged_at.getMonth() == month) { return true; }
 }
 
 async function calVelocityByRepo (repo, owner) {
@@ -115,6 +122,7 @@ async function calVelocityByRepo (repo, owner) {
     }
     return response.data;
   }).then((d) => {
+    //console.log(owner, repo, d.length);
     const filteredPullRequests = d.filter(isRelevantPull);
     //console.log(owner, repo, filteredPullRequests.length);
     filteredPullRequests.forEach(({ user, number, merged_at, created_at }) => {
